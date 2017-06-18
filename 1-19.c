@@ -31,7 +31,6 @@ int get_line(char line[])
 void reverse(char word[], char reversed[], int len)
 {
     int i;
-    int idx;
     for (i = 0; i <= len && word[i] != '\0'; ++i) {
         reversed[len - i - 1] = word[i]; 
     }

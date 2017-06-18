@@ -4,11 +4,8 @@
 
 void escape(char input[], char output[]);
 
-
-
 void escape(char input[], char output[]) 
 {
-
     int i, j, c;
     for (i=0, j=0; (c = input[i]) != '\0'; ++i, ++j) {
         switch (c) {
