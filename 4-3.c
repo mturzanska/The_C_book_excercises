@@ -2,15 +2,20 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>  /* for atof() */
+#include <string.h>
 
 #define MAXOP 100 /* max size of operand or operator */
 #define NUMBER '1' /* signal that a number was found */
-#define NNUMBER '0' /* signal that a number was found */
+#define COMMAND 'c' /* signal that a command was found */
+
 #define MAXVAL 100 /* maximum depth of val stack */
 
 int sp = 0; /* next free stack position */
 double val[MAXVAL]; /* value stack */
 double dupval[MAXVAL]; /* duplicate of value stack */
+double vars[MAXVAL]; /* user defined variables storage */
+
+int command_mode = 0;
 
 void push(double f) /* push f onto value stack */
 {
@@ -85,12 +90,19 @@ int getop(char s[])
     while ((s[0] = c = getch()) == ' ' || c == '\t')
         ;
     s[1] = '\0';
-    if (!isdigit(c) && c != '.' && c != '-') {
-        if (c == 'c' || c == 'd' || c == 's' || c == 'p')
-            getchar();
-        return c;
+    i = 0;
+    if (isalpha(c)) {
+        command_mode = 1;
+        while (isalpha(s[++i] = c = getch()))
+            ;
+        s[i] = '\0';
+        if (c != EOF)
+            ungetch(c);
+        return COMMAND;
     }
-    if (c == '-') {
+    if (!isdigit(c) && c != '.' && c != '-')
+        return c;
+    if (c == '-') {     /* add support for negative numbers */
         c = getch();
         if (!isdigit(c))
             return '-';
@@ -122,17 +134,44 @@ main()
             case NUMBER:
                 push(atof(s));
                 break;
-            case 'p':
-                print();
-                break;
-            case 'c':
-                clear();
-                break;
-            case 's':
-                swap();
-                break;
-            case 'd':
-                duplicate();
+            case COMMAND:
+                if (0 == strcmp(s, "dup")) {
+                    duplicate();
+                }
+                else if(0 == strcmp(s, "swap")) {
+                    swap();
+                }
+                else if(0 == strcmp(s, "print")) {
+                    print();
+                }
+                else if(0 == strcmp(s, "clear")) {
+                    clear();
+                }
+                else if(0 == strcmp(s, "sin")) {
+                    command_mode = 0;
+                    push(sin(pop()));
+                }
+                else if(0 == strcmp(s, "exp")) {
+                    command_mode = 0;
+                    push(exp(pop()));
+                }
+                else if(0 == strcmp(s, "pow")) {
+                    command_mode = 0;
+                    op2 = pop();
+                    push(pow(pop(), op2));
+                }
+                else if(0 == strcmp(s, "store")) {
+                    command_mode = 0;
+                    op2 = pop();
+                    vars[(int)op2] = pop();
+                }
+                else if(0 == strcmp(s, "read")) {
+                    command_mode = 0;
+                    push(vars[(int) pop()]);
+                }
+                else {
+                    printf("Sorry, unknown command: %s\n", s);
+                }
                 break;
             case '+':
                 push(pop() + pop());
@@ -157,7 +196,12 @@ main()
                     printf("error: zero divisor\n");
                 break;
             case '\n':
-                printf("\t%.8g\n", pop());
+                if (command_mode == 0)
+                    printf("\t%.8g\n", pop());
+                else {
+                    command_mode = 0;
+                    printf("\n");
+                }
                 break;
             default:
                 printf("error: unknwon command %s\n", s);
