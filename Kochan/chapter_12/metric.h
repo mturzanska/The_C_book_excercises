@@ -1,0 +1,1 @@
+#define QUARTERS_PER_LITER 1.057
